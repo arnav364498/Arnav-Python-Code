@@ -1,0 +1,189 @@
+#This is a game in which there are two paddles. The left one is controled by up and down arrows, and the right one is w and s keys. You are supposed to hit the ball.
+#I am not fully copying, but thanks to Python For Kids by Jason R. Briggs, I was able to make the paddles react to the ball
+#Be aware that: 1. If you hit the keys to move(w, s, up arrow, down arrow) only once, the paddle will move, but more slowly
+#Be aware that: 2. Sometimes when a paddle hits the ball, the ball accelerates(goes faster)
+#Be awaree that: 3. The score is amounted on how fast the ball goes when you hit or reflect it, but it does not affect if you win or lose
+#Be aware that: 4. This is multiplayer, so play with a friend using the same computer. Decide who is Player One(left) and who is Player Two(right)
+
+#Anyways, here is the code with comments to guide you a bit:
+
+
+#To set up the canvas:
+from Tkinter import *
+import random
+import time
+tk = Tk()
+r = random.randrange(1,4)
+tk.title("Paddle")
+tk.resizable(0, 0)
+tk.wm_attributes("-topmost", 1)
+canvas = Canvas(tk, width=500, height=500, bd=0, highlightthickness=0)
+canvas.pack()
+tk.update()
+
+#To make the class Ball:
+class Ball:
+    def __init__(self, canvas, padOne, padTwo, firstScore, secondScore, color):
+        self.canvas = canvas
+        self.padOne = padOne
+        self.padTwo = padTwo
+        self.firstScore = firstScore
+        self.secondScore = secondScore
+        self.id = canvas.create_oval(10, 10, 25, 25, fill=color)
+        self.canvas.move(self.id, 245, 100)
+        self.x = 0
+        self.y = 0
+        self.canvas_height = self.canvas.winfo_height()
+        self.canvas_width = self.canvas.winfo_width()
+        self.hit_sideOne = False
+        self.hit_sideTwo = False
+        
+    #If the ball hits the first pad:
+    def hit_padOne(self, pos):
+        padO_pos = self.canvas.coords(self.padOne.id)
+        if pos[2] >= padO_pos[0] and pos[0] <= padO_pos[2]:
+            if pos[3] >= padO_pos[1] and pos[3] <= padO_pos[3]:
+                self.firstScore.hitOne()
+                return True
+            return False
+        
+    #If the ball hits the second pad:
+    def hit_padTwo(self, pos):
+        padT_pos = self.canvas.coords(self.padTwo.id)
+        if pos[2] >= padT_pos[0] and pos[0] <= padT_pos[2]:
+            if pos[3] >= padT_pos[1] and pos[3] <= padT_pos[3]:
+                self.secondScore.hitTwo()
+                return True
+            return False
+    #What happens if the ball hits different things(ground, the pads):
+    def draw(self):
+        self.canvas.move(self.id, self.x, self.y)
+        pos = self.canvas.coords(self.id)
+        if pos[1] <= 0:
+            self.y = -1
+        if pos[3] >= self.canvas_height:
+            self.y = -3
+        if self.hit_padOne(pos) == True:
+            if random.randrange(1,2) == 1:
+                self.x += 2
+                self.y += 0
+            elif random.randrange(1,2) == 2:
+                self.x += 2
+                self.y += 2
+        if self.hit_padTwo(pos) == True:
+            if random.randrange(1,2) == 1:
+                self.x -= 2
+                self.y -= 0
+            elif random.randrange(1,2) == 2:
+                self.x -= 2
+                self.y -= 2
+        if pos[0] <= 0:
+            self.hit_sideOne = True
+            canvas.create_text(250, 200, text='Player 1 loses', fill='red', font=('Courier', 30))
+        if pos[2] >= self.canvas_width:
+            self.hit_sideTwo = True
+            canvas.create_text(250, 200, text='Player 2 loses', fill='red', font=('Courier', 30))
+
+        #To make the ball move randomly:
+        if r == 1:
+            self.canvas.move(self.id, -2, 0)
+        elif r == 2:
+            self.canvas.move(self.id, 2, 0)
+        elif r == 3:
+            self.canvas.move(self.id, 2, 2)
+        elif r == 4:
+            self.canvas.move(self.id, -2, -2)
+class scoreOne:
+    def __init__(self, canvas, color):
+        self.scoreOne = 0
+        self.canvas = canvas
+        self.id = canvas.create_text(50, 50, text=self.scoreOne, fill=color, font=('Courier', 30))
+    def hitOne(self):
+        self.scoreOne += 1
+        self.canvas.itemconfig(self.id, text=self.scoreOne)
+class scoreTwo:
+    def __init__(self, canvas, color):
+        self.scoreTwo = 0
+        self.canvas = canvas
+        self.id = canvas.create_text(400, 50, text=self.scoreTwo, fill=color, font=('Courier', 30))
+    def hitTwo(self):
+        self.scoreTwo += 1
+        self.canvas.itemconfig(self.id, text=self.scoreTwo)
+
+#The first paddle class:
+class PaddleOne:
+    def __init__(self, canvas, color):
+        self.canvas = canvas
+        self.id = canvas.create_rectangle(0, 0, 10, 100, fill=color)
+        self.canvas.move(self.id, 50, 200)
+        self.y = 0
+        self.canvas_height = self.canvas.winfo_height()
+        self.canvas.bind_all('<KeyPress-Up>', self.turn_up)
+        self.canvas.bind_all('<KeyPress-Down>', self.turn_down)
+
+    #What happens if the paddle hits something:
+    def draw(self):
+        self.canvas.move(self.id, 0, self.y)
+        pos = self.canvas.coords(self.id)
+        if pos[0] <= 0:
+            self.y = 1
+        elif pos[2] >= self.canvas_height:
+            self.y = -1
+        if pos[1] <= 0:
+            self.y = 1
+        if pos[3] >= self.canvas_height:
+            self.y = -1
+
+    #To tell how to control the pad:
+    def turn_up(self, evt):
+        self.y = -3
+    def turn_down(self, evt):
+        self.y = 3
+
+# The second paddle class:
+class PaddleTwo:
+    def __init__(self, canvas, color):
+        self.canvas = canvas
+        self.id = canvas.create_rectangle(0, 0, 10, 100, fill=color)
+        self.canvas.move(self.id, 400, 200)
+        self.y = 0
+        self.canvas_height = self.canvas.winfo_height()
+        self.canvas.bind_all('<KeyPress-w>', self.turn_up)
+        self.canvas.bind_all('<KeyPress-s>', self.turn_down)
+
+    #What happens if the second paddle hits something:
+    def draw(self):
+        self.canvas.move(self.id, 0, self.y)
+        pos = self.canvas.coords(self.id)
+        if pos[0] <= 0:
+            self.y = -1
+        elif pos[2] >= self.canvas_height:
+            self.y = 1
+        if pos[1] <= 0:
+            self.y = 1
+        if pos[3] >= self.canvas_height:
+            self.y = -1
+    def turn_up(self, evt):
+        self.y = -3
+    def turn_down(self, evt):
+        self.y = 3
+
+
+    
+
+#To define the two pads and the ball using the classes:
+firstScore = scoreOne(canvas, 'green')
+secondScore = scoreTwo(canvas, 'green')
+padOne = PaddleOne(canvas, 'white')
+padTwo = PaddleTwo(canvas, 'white')
+ball = Ball(canvas, padOne, padTwo, firstScore, secondScore, 'black')
+
+#So python knows to make the canvas work and to show the ball and the two pads:
+while 1:
+    ball.draw()
+    padOne.draw()
+    padTwo.draw()
+    tk.update_idletasks()
+    tk.update()
+    time.sleep(0.01)
+    
